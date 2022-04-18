@@ -7,3 +7,4 @@ train/.DS_Store
 .DS_Store
 .ipynb_checkpoints/FaceDetection-checkpoint.ipynb
 face_gender_detection.h5
+*.xml

@@ -4,7 +4,6 @@ from tensorflow.keras.layers import Dense,Dropout,Conv2D, Flatten, MaxPooling2D
 from tensorflow.keras.models import Model,Sequential 
 from tensorflow.keras import optimizers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from Preprocessing import download_clean_processImages
 
 def Age_Model():
     model = Sequential()
@@ -60,7 +59,7 @@ def Gender_Model():
 
 def viz_overfit(model,history,num_of_test_samples,batch_size,target_names,epc):
     
-    Y_pred = model.predict_generator(test_generator, math.ceil(num_of_test_samples / batch_size))
+    Y_pred = model.predict(test_generator, math.ceil(num_of_test_samples / batch_size))
     
     print(classification_report(test_generator.classes[:Y_pred.shape[0]],
                                 list(np.argmax(Y_pred,axis=1)), 
