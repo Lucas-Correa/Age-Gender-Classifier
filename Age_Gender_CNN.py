@@ -9,6 +9,7 @@ from tensorflow import keras
 from keras.layers import Dense,Dropout,Conv2D, Flatten, MaxPooling2D,BatchNormalization
 from keras.models import Sequential 
 from keras import optimizers
+import os
 
 from Preprocessing import get_organize_files
 
@@ -129,13 +130,14 @@ if __name__ == '__main__':
 
     train_generator,validation_generator, test_generator = get_organize_files()
 
-    timestamp = datetime.now().strftime("%Y_%m_%d_%Hh_%Mm")
+    timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
     model_dir = 'Models/Model_{}/'.format(timestamp)
-    checkpoints = model_dir + '{epoch:02d}-{val_accuracy:.2f}.hdf5'
+    checkpoints = model_dir + '{epoch:02d}-{val_acc:.2f}.hdf5'
+    print(checkpoints)
 
     callback_list = [
         keras.callbacks.EarlyStopping(monitor='acc',patience=7),
-        keras.callbacks.ModelCheckpoint(filepath=checkpoints,save_best_only=True, monitor='acc'),
+        keras.callbacks.ModelCheckpoint(filepath=checkpoints, monitor='acc'),
         keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3,cooldown=2)
     ]
     history_age = model_age.fit(train_generator,
