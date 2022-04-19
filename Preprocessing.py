@@ -1,29 +1,32 @@
 import pandas as pd
-import numpy as np
-import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 import tarfile
 import os
 import shutil
-import warnings
-from sklearn.metrics import classification_report, confusion_matrix
-import matplotlib.pyplot as plt
-import math
+from keras.preprocessing.image import ImageDataGenerator
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.layers import Dense,Dropout,Conv2D, Flatten, MaxPooling2D
-from tensorflow.keras.models import Model,Sequential 
-from tensorflow.keras import optimizers
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+def file_organizer(images_split,folder_name):
+    #creates directories for training, test and validation files
+    cwd = os.getcwd()
+    
+    split_folder = os.path.join(cwd,folder_name)
+    if not os.path.exists(split_folder):
+        os.mkdir(split_folder)
 
+    #copy images to each directory
+    for index, row in images_split.iterrows():
+        src = os.path.join(cwd,'aligned',row['user_id'],'landmark_aligned_face.'+str(row['face_id'])+'.'+row['original_image'])
+        dst = os.path.join(split_folder,row['original_image'])
+        shutil.copyfile(src,dst)
 
+    print('{} folder created'.format(folder_name))
+
+    return split_folder
 
 def get_organize_files(): 
     #download files with images
     #https://talhassner.github.io/home/projects/Adience/Adience-data.html
-    BASE_URL = "http://www.cslab.openu.ac.il/download/adiencedb/AdienceBenchmarkOfUnfilteredFacesForGenderAndAgeClassification"
     DOWNLOAD_FILES = {
               "http://www.cslab.openu.ac.il/download/adiencedb/AdienceBenchmarkOfUnfilteredFacesForGenderAndAgeClassification/aligned.tar.gz": "aligned.tar.gz",
               "http://www.cslab.openu.ac.il/download/adiencedb/AdienceBenchmarkOfUnfilteredFacesForGenderAndAgeClassification/fold_0_data.txt": "fold_0_data.txt",
@@ -71,37 +74,12 @@ def get_organize_files():
                      ['(35,43)' ,'(8,13)' ,'(15,24)' ,'(45,100)' ,'(35,43)' ,'(45,100)','(3, 6)','(45,100)','(25,34)' ,'(8,13)'],
                      inplace=True)
      
-    train = fold.groupby('gender',as_index=False,group_keys=False).apply(lambda x: x.sample(frac=.5))
-    test = fold.drop(train.index.values)
+    train = fold.groupby('gender',as_index=False,group_keys=False).apply(lambda x: x.sample(frac=.6))
+    test = fold.drop(train.index).groupby('gender',as_index=False,group_keys=False).apply(lambda x: x.sample(frac=.4))
+    validation = fold.drop(train.index).drop(test.index)
     
-    print('Train and test split done')
-    
-    #creates directories for training, test and validation files
-    cwd = os.getcwd()
-    
-    train_faces = os.path.join(cwd,'train')
-    if not os.path.exists(train_faces):
-        os.mkdir(train_faces)
+    print('Train, Validation and Test split done')
 
-    test_faces = os.path.join(cwd,'test')
-    if not os.path.exists(test_faces):
-        os.mkdir(test_faces)
-
-    #copy images to each directory
-    for index, row in train.iterrows():
-        src = os.path.join(cwd,'aligned',row['user_id'],'landmark_aligned_face.'+str(row['face_id'])+'.'+row['original_image'])
-        dst = os.path.join(train_faces,row['original_image'])
-        shutil.copyfile(src,dst)
-
-    print('train images copied')
-
-    for index, row in test.iterrows():
-        src = os.path.join(cwd,'aligned',row['user_id'],'landmark_aligned_face.'+str(row['face_id'])+'.'+row['original_image'])
-        dst = os.path.join(test_faces,row['original_image'])
-        shutil.copyfile(src,dst)
-
-    print('test images copied')
-    
     train_datagen = ImageDataGenerator(rescale=1./255,
                                   rotation_range=45,
                                   width_shift_range=0.2,
@@ -111,29 +89,42 @@ def get_organize_files():
                                   fill_mode='nearest')
 
     train_generator = train_datagen.flow_from_dataframe(
-                        train_images_ids,
-                        x_col='original_image',
-                        y_col='age',
-                        directory=train_faces,
-                        target_size=(150,150),
-                        batch_size=100,
-                        class_mode='categorical'
-                    )
+                    train,
+                    x_col='original_image',
+                    y_col='age',
+                    directory=file_organizer(train,'train_images'),
+                    target_size=(150,150),
+                    batch_size=100,
+                    class_mode='categorical'
+                )
 
-    test_datagen = ImageDataGenerator(rescale=1./255)
-    test_generator = test_datagen.flow_from_dataframe(
-                        test_images_ids,
+
+    validation_datagen = ImageDataGenerator(rescale=1./255)
+
+    validation_generator = validation_datagen.flow_from_dataframe(
+                        validation,
                         x_col='original_image',
                         y_col='age',
-                        directory=test_faces,
+                        directory=file_organizer(validation,'validation_images'),
                         target_size=(150,150),
                         batch_size=100,
                         class_mode='categorical',
-                        shuffle=False
-                    )
-    return train_generator, test_generator
+                        )
 
 
-
+    test_datagen = ImageDataGenerator(rescale=1./255)
+    
+    test_generator = test_datagen.flow_from_dataframe(
+                    test,
+                    x_col='original_image',
+                    y_col='age',
+                    directory=file_organizer(test,'test_images'),
+                    target_size=(150,150),
+                    batch_size=100,
+                    class_mode='categorical',
+                    shuffle=False
+                )
+    
+    return train_generator,validation_generator,test_generator
 
     
