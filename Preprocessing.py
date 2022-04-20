@@ -80,51 +80,28 @@ def get_organize_files():
     
     print('Train, Validation and Test split done')
 
-    train_datagen = ImageDataGenerator(rescale=1./255,
-                                  rotation_range=45,
-                                  width_shift_range=0.2,
-                                  height_shift_range=0.2,
-                                  shear_range=0.1,
-                                  zoom_range=0.1,
-                                  fill_mode='nearest')
+    return train,validation,test
 
-    train_generator = train_datagen.flow_from_dataframe(
-                    train,
+def ImgGen(df,col,dir):
+
+    if 'train' in dir:
+        datagen = ImageDataGenerator(rescale=1./255,
+                                    rotation_range=45,
+                                    width_shift_range=0.2,
+                                    height_shift_range=0.2,
+                                    shear_range=0.1,
+                                    zoom_range=0.1,
+                                    fill_mode='nearest')
+    else:
+        datagen = ImageDataGenerator(rescale=1./255)
+
+    generator = datagen.flow_from_dataframe(
+                    df,
                     x_col='original_image',
-                    y_col='age',
-                    directory=file_organizer(train,'train_images'),
-                    target_size=(150,150),
+                    y_col=col,
+                    directory=file_organizer(df,dir),
+                    target_size=(120,120),
                     batch_size=100,
                     class_mode='categorical'
                 )
-
-
-    validation_datagen = ImageDataGenerator(rescale=1./255)
-
-    validation_generator = validation_datagen.flow_from_dataframe(
-                        validation,
-                        x_col='original_image',
-                        y_col='age',
-                        directory=file_organizer(validation,'validation_images'),
-                        target_size=(150,150),
-                        batch_size=100,
-                        class_mode='categorical',
-                        )
-
-
-    test_datagen = ImageDataGenerator(rescale=1./255)
-    
-    test_generator = test_datagen.flow_from_dataframe(
-                    test,
-                    x_col='original_image',
-                    y_col='age',
-                    directory=file_organizer(test,'test_images'),
-                    target_size=(150,150),
-                    batch_size=100,
-                    class_mode='categorical',
-                    shuffle=False
-                )
-    
-    return train_generator,validation_generator,test_generator
-
-    
+    return generator
