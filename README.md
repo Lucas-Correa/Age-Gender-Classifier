@@ -1,4 +1,4 @@
-# NOVA IMS 2021/2022 - Deep Learning Project (Group 8)
+# NOVA IMS 2021/2022 - Deep Learning Project 
 The goal of this project is to build a Convolutional Neural Network that predicts the age and gender of a person by processing a picture of their face.
 
 In essence, our model will receive a .jpeg image of the front of a person’s face and try to classify first as male, female or neutral (for babies that don't show very strong traces of any gender) and then in which bins of age this person is most probably is: 0-2, 3-6, 8-13, 15-24, 25-34, 35-43, 45-100. The bins of age are separated according to the available data that is taken from the OUI-Audience Face Image Project which compiled Flickr photos albuns uploaded from smartphones devices of people that allowed them to let their images to the general public.
